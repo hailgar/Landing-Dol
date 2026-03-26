@@ -28,6 +28,10 @@ export default function App() {
 
   return (
     <>
+    <h1 className="text-4xl text-blue-500 text-center">
+      Tailwind is working 🚀
+    </h1>
+
       {/* Tiny CSS injector so you don't need extra files */}
       <style>{`
         .dol-glitchWrap{position:fixed;inset:0;z-index:9999;pointer-events:none;}
