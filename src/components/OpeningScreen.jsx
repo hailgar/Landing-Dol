@@ -4,13 +4,10 @@ import LetterGlitch from "../components/LetterGlitch";
 import Waves from "../components/Waves";
 
 export default function OpeningScreen({ onFinish }) {
-  const [phase, setPhase] = useState("idle");
+  const [phase, setPhase] = useState("idle"); // idle -> entering
   const rootRef = useRef(null);
 
-  // 🎧 AUDIO REF
-  const audioRef = useRef(null);
-  const [muted, setMuted] = useState(false);
-
+  // Shared state for sync LetterGlitch & Waves
   const waveShareRef = useRef({
     t: 0,
     x: -9999,
@@ -35,28 +32,8 @@ export default function OpeningScreen({ onFinish }) {
     []
   );
 
-  // 🔥 Fade in audio biar smooth
-  const fadeInAudio = () => {
-    if (!audioRef.current) return;
-    let vol = 0;
-    const interval = setInterval(() => {
-      if (!audioRef.current) return;
-      vol += 0.05;
-      audioRef.current.volume = Math.min(vol, 0.4);
-      if (vol >= 0.4) clearInterval(interval);
-    }, 100);
-  };
-
   const enter = () => {
     if (phase !== "idle") return;
-
-    // 🎧 PLAY AUDIO
-    if (audioRef.current) {
-      audioRef.current.volume = 0;
-      audioRef.current.play().catch(() => {});
-      fadeInAudio();
-    }
-
     setPhase("entering");
     window.setTimeout(() => onFinish?.(), 1550);
   };
@@ -65,19 +42,15 @@ export default function OpeningScreen({ onFinish }) {
     const onKeyDown = (e) => {
       if (e.key === "Enter") enter();
     };
+
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [phase]);
 
-  const toggleMute = () => {
-    if (!audioRef.current) return;
-    audioRef.current.muted = !muted;
-    setMuted(!muted);
-  };
-
   const onMouseMove = (e) => {
     const el = rootRef.current;
     if (!el) return;
+
     const r = el.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width;
     const py = (e.clientY - r.top) / r.height;
@@ -95,17 +68,13 @@ export default function OpeningScreen({ onFinish }) {
   return (
     <div
       ref={rootRef}
-      className={[styles.wrap, phase === "entering" ? styles.entering : ""].join(" ")}
+      className={[
+        styles.wrap,
+        phase === "entering" ? styles.entering : "",
+      ].join(" ")}
       onMouseMove={onMouseMove}
       onPointerDown={onPointerDown}
     >
-      {/* 🎧 AUDIO ELEMENT */}
-      <audio
-        ref={audioRef}
-        src="/soundtrack/Brave Heart - Digimon.mp3"
-        loop
-      />
-
       {/* BACKGROUND */}
       <div className={styles.bgLayer}>
         <LetterGlitch
@@ -155,7 +124,9 @@ export default function OpeningScreen({ onFinish }) {
       <div className={styles.center}>
         <div
           className={styles.logo3d}
-          style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
+          style={{
+            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          }}
         >
           <DOLLogo onPortal={enter} />
         </div>
@@ -169,13 +140,8 @@ export default function OpeningScreen({ onFinish }) {
           <span>untuk masuk ke dunia DOL</span>
         </button>
 
-        {/* 🔊 MUTE BUTTON */}
-        <button className={styles.soundToggle} onClick={toggleMute}>
-          {muted ? "🔇 Unmute" : "🔊 Mute"}
-        </button>
-
         <div className={styles.mini}>
-          Gerakkan mouse • Klik logo untuk masuk
+          Gerakkan mouse untuk mainin logo • Klik O untuk portal
         </div>
       </div>
 
@@ -184,11 +150,114 @@ export default function OpeningScreen({ onFinish }) {
   );
 }
 
+/* ================= LOGO ================= */
+
 function DOLLogo({ onPortal }) {
   return (
     <div className={styles.logoWrap}>
-      <button onClick={onPortal}>
-        ENTER
+      <svg
+        className={styles.logoSvg}
+        viewBox="0 0 920 240"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feColorMatrix
+              in="blur"
+              type="matrix"
+              values="
+                1 0 0 0 0.10
+                0 1 0 0 0.95
+                0 0 1 0 0.55
+                0 0 0 1 0
+              "
+              result="colored"
+            />
+            <feMerge>
+              <feMergeNode in="colored" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <linearGradient id="strokeGrad" x1="0" y1="0" x2="920" y2="0">
+            <stop offset="0" stopColor="rgba(200,255,240,0.92)" />
+            <stop offset="0.45" stopColor="rgba(120,255,210,0.92)" />
+            <stop offset="1" stopColor="rgba(160,160,255,0.92)" />
+          </linearGradient>
+
+          <radialGradient id="portalFill" cx="50%" cy="45%" r="60%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+            <stop offset="35%" stopColor="rgba(140,255,210,0.55)" />
+            <stop offset="70%" stopColor="rgba(60,255,170,0.18)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+          </radialGradient>
+        </defs>
+
+        {/* D */}
+        <path
+          className={styles.strokeDraw}
+          d="M90 50 H190 C255 50 295 90 295 120 C295 150 255 190 190 190 H90 Z 
+             M140 88 H186 C216 88 238 105 238 120 C238 135 216 152 186 152 H140 Z"
+          stroke="url(#strokeGrad)"
+          strokeWidth="10"
+          strokeLinejoin="round"
+          filter="url(#glow)"
+        />
+
+        {/* O */}
+        <path
+          className={styles.strokeDraw}
+          d="M460 50 C540 50 600 90 600 120 C600 150 540 190 460 190 
+             C380 190 320 150 320 120 C320 90 380 50 460 50 Z"
+          stroke="url(#strokeGrad)"
+          strokeWidth="10"
+          strokeLinejoin="round"
+          filter="url(#glow)"
+        />
+
+        {/* Inner O */}
+        <path
+          className={styles.strokeDrawSoft}
+          d="M460 82 C505 82 540 103 540 120 C540 137 505 158 460 158 
+             C415 158 380 137 380 120 C380 103 415 82 460 82 Z"
+          stroke="rgba(160,255,220,0.55)"
+          strokeWidth="8"
+          opacity="0.9"
+        />
+
+        {/* L */}
+        <path
+          className={styles.strokeDraw}
+          d="M690 50 V190 H840"
+          stroke="url(#strokeGrad)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter="url(#glow)"
+        />
+
+        {/* Portal */}
+        <circle
+          className={styles.portalGlow}
+          cx="460"
+          cy="120"
+          r="56"
+          fill="url(#portalFill)"
+        />
+        <circle className={styles.portalRing} cx="460" cy="120" r="66" />
+      </svg>
+
+      <button
+        className={styles.portalBtn}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPortal();
+        }}
+        aria-label="Enter portal"
+      >
+        <span className={styles.portalCore} />
       </button>
     </div>
   );
