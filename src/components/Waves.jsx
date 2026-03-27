@@ -153,12 +153,16 @@ const Waves = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
+    if (!canvas) return;
     ctxRef.current = canvas.getContext('2d');
+    if (!ctxRef.current) return;
 
     function setSize() {
       boundingRef.current = container.getBoundingClientRect();
-      canvas.width = boundingRef.current.width;
-      canvas.height = boundingRef.current.height;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = boundingRef.current.width * dpr;
+      canvas.height = boundingRef.current.height * dpr;
+      ctxRef.current.scale(dpr, dpr);
     }
 
     function setLines() {
@@ -313,11 +317,17 @@ const Waves = ({
         shareRef.current.friction = cfg.friction;
         shareRef.current.tension = cfg.tension;
         shareRef.current.maxCursorMove = cfg.maxCursorMove;
-      }
 
       movePoints(t);
       drawLines();
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+      }
       frameIdRef.current = requestAnimationFrame(tick);
+    }
+      else {
+        console.log("shareRef not connected");
+      }   
     }
 
     function onResize() {
@@ -348,10 +358,12 @@ const Waves = ({
 
     setSize();
     setLines();
+    if (frameIdRef.current) {
+      cancelAnimationFrame(frameIdRef.current);
+    }
     frameIdRef.current = requestAnimationFrame(tick);
-
     window.addEventListener('resize', onResize);
-    window.addEventListener('mousemove', onMouseMove);
+    container.addEventListener('mousemove', onMouseMove);
     window.addEventListener('touchmove', onTouchMove, { passive: true });
 
     return () => {
