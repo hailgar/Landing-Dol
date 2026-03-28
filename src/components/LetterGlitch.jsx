@@ -19,6 +19,9 @@ const LetterGlitch = ({
   charWidth = 10,
   charHeight = 20,
 
+  gravity = 0.005,
+  maxFallSpeed = 2,
+
   // fps throttle
   frameMs = 16,
 }) => {
@@ -64,16 +67,17 @@ const LetterGlitch = ({
     grid.current = { columns, rows };
     const total = columns * rows;
 
-    letters.current = Array.from({ length: total }, () => ({
-      char: getRandomChar(),
-      color: getRandomColor(),
-      targetColor: getRandomColor(),
-      colorProgress: 1,
+  letters.current = Array.from({ length: total }, () => ({
+    char: getRandomChar(),
+    color: getRandomColor(),
 
-      // ✅ store physics like Waves per point
-      cursor: { x: 0, y: 0, vx: 0, vy: 0 },
-      wave: { x: 0, y: 0 },
-    }));
+    // gravity system
+    vy: Math.random() * 2,
+    offsetY: Math.random() * -500, // mulai dari atas random
+
+    cursor: { x: 0, y: 0, vx: 0, vy: 0 },
+    wave: { x: 0, y: 0 },
+  }));
   };
 
   const resizeCanvas = () => {
@@ -166,7 +170,8 @@ const LetterGlitch = ({
       maxCursorMove: s?.maxCursorMove ?? 100,
     };
 
-    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(0, 0, W, H);
     ctx.font = `${fontSize}px monospace`;
     ctx.textBaseline = "top";
 
@@ -187,8 +192,21 @@ const LetterGlitch = ({
         cell.cursor.y *= 0.9;
       }
 
-      const x = baseX + cell.wave.x + cell.cursor.x;
-      const y = baseY + cell.wave.y + cell.cursor.y;
+  // ✅ GRAVITY UPDATE
+    cell.vy += gravity;
+    if (cell.vy > maxFallSpeed) cell.vy = maxFallSpeed;
+
+    cell.offsetY += cell.vy;
+
+    // kalau sudah keluar bawah → reset ke atas
+    if (cell.offsetY > H + 50) {
+      cell.offsetY = -Math.random() * 200;
+      cell.vy = Math.random() * 2;
+      cell.char = getRandomChar(); // optional biar fresh
+    }
+
+    const x = baseX + cell.wave.x + cell.cursor.x;
+    const y = baseY + cell.wave.y + cell.cursor.y + cell.offsetY;
 
       ctx.fillStyle = cell.color;
       ctx.fillText(cell.char, x, y);
@@ -241,12 +259,7 @@ const LetterGlitch = ({
     const now = Date.now();
     const t = performance.now();
 
-    if (now - lastGlitchTime.current >= glitchSpeed) {
-      updateCharsAndColors();
-      lastGlitchTime.current = now;
-    }
-
-    const colorChanged = stepColorTransitions();
+    const colorChanged = false;
 
     if (t - lastDrawAt.current >= frameMs || colorChanged) {
       drawFrame(t);

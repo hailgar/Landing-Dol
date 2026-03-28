@@ -4,11 +4,11 @@ import LetterGlitch from "../components/LetterGlitch";
 import Waves from "../components/Waves";
 
 export default function OpeningScreen({ onFinish }) {
-  const [phase, setPhase] = useState("idle"); // idle -> entering
+  const ENABLE_WAVES = false;
+
+  const [phase, setPhase] = useState("idle");
   const rootRef = useRef(null);
 
-  // Shared state so LetterGlitch wave/ripple stays in-sync with Waves.
-  // { t, x, y, v, vs, a, width, height }
   const waveShareRef = useRef({
     t: 0,
     x: -9999,
@@ -25,7 +25,6 @@ export default function OpeningScreen({ onFinish }) {
 
   const characters = useMemo(
     () =>
-      // Rusia + Greek + simbol (matrix vibe)
       "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
       "αβγδεζηθικλμνξοπρστυφχψω" +
       "ΔΛΩΣΠΦΨ" +
@@ -46,7 +45,6 @@ export default function OpeningScreen({ onFinish }) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   const onMouseMove = (e) => {
@@ -62,10 +60,23 @@ export default function OpeningScreen({ onFinish }) {
     });
   };
 
-  // click burst -> quick glitch kick
   const onPointerDown = () => {
     setBurst((b) => b + 1);
   };
+
+  // ✅ AUDIO
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = 0.3;
+
+    audio.play().catch(() => {
+      console.log("Autoplay blocked");
+    });
+  }, []);
 
   return (
     <div
@@ -73,8 +84,19 @@ export default function OpeningScreen({ onFinish }) {
       className={[styles.wrap, phase === "entering" ? styles.entering : ""].join(" ")}
       onMouseMove={onMouseMove}
       onPointerDown={onPointerDown}
+      onClick={() => {
+        const audio = audioRef.current;
+        if (audio) audio.play();
+      }}
     >
-      {/* FULLSCREEN MATRIX BACKGROUND */}
+      {/* AUDIO */}
+      <audio
+        ref={audioRef}
+        src="/soundtrack/Brave Heart - Digimon.mp3"
+        loop
+      />
+
+      {/* BACKGROUND */}
       <div className={styles.bgLayer}>
         <LetterGlitch
           className={styles.letterBg}
@@ -84,7 +106,6 @@ export default function OpeningScreen({ onFinish }) {
           smooth
           outerVignette
           centerVignette
-          // ✅ sync with Waves
           shareRef={waveShareRef}
           waveStrength={1.0}
           waveAmpX={10}
@@ -95,46 +116,47 @@ export default function OpeningScreen({ onFinish }) {
         />
       </div>
 
-      {/* INTERACTIVE WAVES */}
-      <div className={styles.wavesLayer} aria-hidden="true">
-        <Waves
-          className={styles.wavesBlend}
-          backgroundColor="transparent"
-          // ✅ sync with LetterGlitch
-          shareRef={waveShareRef}
-          lineColor="rgba(140, 255, 210, 0.28)"
-          lineWidth={1.35}
-          lineAlpha={0.85}
-          waveAmpX={52}
-          waveAmpY={22}
-          waveSpeedX={0.014}
-          waveSpeedY={0.006}
-          xGap={14}
-          yGap={40}
-          tension={0.008}
-          friction={0.93}
-        />
-      </div>
+      {ENABLE_WAVES && (
+        <div className={styles.wavesLayer} aria-hidden="true">
+          <Waves
+            className={styles.wavesBlend}
+            backgroundColor="transparent"
+            shareRef={waveShareRef}
+            lineColor="rgba(140, 255, 210, 0.28)"
+            lineWidth={1.35}
+            lineAlpha={0.85}
+            waveAmpX={52}
+            waveAmpY={22}
+            waveSpeedX={0.014}
+            waveSpeedY={0.006}
+            xGap={14}
+            yGap={40}
+            tension={0.008}
+            friction={0.93}
+          />
+        </div>
+      )}
 
-      {/* CINEMATIC OVERLAYS */}
       <div className={styles.scanlines} aria-hidden="true" />
       <div className={styles.vignette} aria-hidden="true" />
       <div className={styles.filmGrain} aria-hidden="true" />
 
-      {/* CONTENT */}
       <div className={styles.center}>
-        <div className={styles.logo3d} style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}>
+        <div
+          className={styles.logo3d}
+          style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
+        >
           <DOLLogo onPortal={enter} />
         </div>
 
-        <div className={styles.sub}>FUTURISTIC WEB EXPERIENCES • DIGITAL PRODUCT • IT SOLUTIONS</div>
+        <div className={styles.sub}>
+          FUTURISTIC WEB EXPERIENCES • DIGITAL PRODUCT • IT SOLUTIONS
+        </div>
 
         <button className={styles.hint} onClick={enter}>
           <span className={styles.key}>Enter</span>
           <span>untuk masuk ke dunia DOL</span>
         </button>
-
-        <div className={styles.mini}>Gerakkan mouse untuk mainin logo • Klik O untuk portal</div>
       </div>
 
       <div className={styles.flash} />
@@ -215,10 +237,18 @@ function DOLLogo({ onPortal }) {
         {/* L */}
         <path
           className={styles.strokeDraw}
-          d="M690 50 V190 H840"
+          d="
+            M690 50 
+            V190 
+            H840 
+            V160 
+            H730 
+            V50 
+            Z
+          "
+          fill="none"
           stroke="url(#strokeGrad)"
           strokeWidth="10"
-          strokeLinecap="round"
           strokeLinejoin="round"
           filter="url(#glow)"
         />
