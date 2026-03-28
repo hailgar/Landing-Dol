@@ -7,7 +7,8 @@ export default function OpeningScreen({ onFinish }) {
   const [phase, setPhase] = useState("idle"); // idle -> entering
   const rootRef = useRef(null);
 
-  // Shared state for sync LetterGlitch & Waves
+  // Shared state so LetterGlitch wave/ripple stays in-sync with Waves.
+  // { t, x, y, v, vs, a, width, height }
   const waveShareRef = useRef({
     t: 0,
     x: -9999,
@@ -24,6 +25,7 @@ export default function OpeningScreen({ onFinish }) {
 
   const characters = useMemo(
     () =>
+      // Rusia + Greek + simbol (matrix vibe)
       "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" +
       "αβγδεζηθικλμνξοπρστυφχψω" +
       "ΔΛΩΣΠΦΨ" +
@@ -42,15 +44,14 @@ export default function OpeningScreen({ onFinish }) {
     const onKeyDown = (e) => {
       if (e.key === "Enter") enter();
     };
-
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   const onMouseMove = (e) => {
     const el = rootRef.current;
     if (!el) return;
-
     const r = el.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width;
     const py = (e.clientY - r.top) / r.height;
@@ -61,6 +62,7 @@ export default function OpeningScreen({ onFinish }) {
     });
   };
 
+  // click burst -> quick glitch kick
   const onPointerDown = () => {
     setBurst((b) => b + 1);
   };
@@ -68,14 +70,11 @@ export default function OpeningScreen({ onFinish }) {
   return (
     <div
       ref={rootRef}
-      className={[
-        styles.wrap,
-        phase === "entering" ? styles.entering : "",
-      ].join(" ")}
+      className={[styles.wrap, phase === "entering" ? styles.entering : ""].join(" ")}
       onMouseMove={onMouseMove}
       onPointerDown={onPointerDown}
     >
-      {/* BACKGROUND */}
+      {/* FULLSCREEN MATRIX BACKGROUND */}
       <div className={styles.bgLayer}>
         <LetterGlitch
           className={styles.letterBg}
@@ -85,6 +84,7 @@ export default function OpeningScreen({ onFinish }) {
           smooth
           outerVignette
           centerVignette
+          // ✅ sync with Waves
           shareRef={waveShareRef}
           waveStrength={1.0}
           waveAmpX={10}
@@ -95,11 +95,12 @@ export default function OpeningScreen({ onFinish }) {
         />
       </div>
 
-      {/* WAVES */}
+      {/* INTERACTIVE WAVES */}
       <div className={styles.wavesLayer} aria-hidden="true">
         <Waves
           className={styles.wavesBlend}
           backgroundColor="transparent"
+          // ✅ sync with LetterGlitch
           shareRef={waveShareRef}
           lineColor="rgba(140, 255, 210, 0.28)"
           lineWidth={1.35}
@@ -115,34 +116,25 @@ export default function OpeningScreen({ onFinish }) {
         />
       </div>
 
-      {/* OVERLAYS */}
-      <div className={styles.scanlines} />
-      <div className={styles.vignette} />
-      <div className={styles.filmGrain} />
+      {/* CINEMATIC OVERLAYS */}
+      <div className={styles.scanlines} aria-hidden="true" />
+      <div className={styles.vignette} aria-hidden="true" />
+      <div className={styles.filmGrain} aria-hidden="true" />
 
       {/* CONTENT */}
       <div className={styles.center}>
-        <div
-          className={styles.logo3d}
-          style={{
-            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          }}
-        >
+        <div className={styles.logo3d} style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}>
           <DOLLogo onPortal={enter} />
         </div>
 
-        <div className={styles.sub}>
-          FUTURISTIC WEB EXPERIENCES • DIGITAL PRODUCT • IT SOLUTIONS
-        </div>
+        <div className={styles.sub}>FUTURISTIC WEB EXPERIENCES • DIGITAL PRODUCT • IT SOLUTIONS</div>
 
         <button className={styles.hint} onClick={enter}>
           <span className={styles.key}>Enter</span>
           <span>untuk masuk ke dunia DOL</span>
         </button>
 
-        <div className={styles.mini}>
-          Gerakkan mouse untuk mainin logo • Klik O untuk portal
-        </div>
+        <div className={styles.mini}>Gerakkan mouse untuk mainin logo • Klik O untuk portal</div>
       </div>
 
       <div className={styles.flash} />
@@ -150,17 +142,10 @@ export default function OpeningScreen({ onFinish }) {
   );
 }
 
-/* ================= LOGO ================= */
-
 function DOLLogo({ onPortal }) {
   return (
     <div className={styles.logoWrap}>
-      <svg
-        className={styles.logoSvg}
-        viewBox="0 0 920 240"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      <svg className={styles.logoSvg} viewBox="0 0 920 240" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="6" result="blur" />
@@ -171,8 +156,7 @@ function DOLLogo({ onPortal }) {
                 1 0 0 0 0.10
                 0 1 0 0 0.95
                 0 0 1 0 0.55
-                0 0 0 1 0
-              "
+                0 0 0 1 0"
               result="colored"
             />
             <feMerge>
@@ -181,7 +165,7 @@ function DOLLogo({ onPortal }) {
             </feMerge>
           </filter>
 
-          <linearGradient id="strokeGrad" x1="0" y1="0" x2="920" y2="0">
+          <linearGradient id="strokeGrad" x1="0" y1="0" x2="920" y2="0" gradientUnits="userSpaceOnUse">
             <stop offset="0" stopColor="rgba(200,255,240,0.92)" />
             <stop offset="0.45" stopColor="rgba(120,255,210,0.92)" />
             <stop offset="1" stopColor="rgba(160,160,255,0.92)" />
@@ -198,7 +182,7 @@ function DOLLogo({ onPortal }) {
         {/* D */}
         <path
           className={styles.strokeDraw}
-          d="M90 50 H190 C255 50 295 90 295 120 C295 150 255 190 190 190 H90 Z 
+          d="M90 50 H190 C255 50 295 90 295 120 C295 150 255 190 190 190 H90 Z
              M140 88 H186 C216 88 238 105 238 120 C238 135 216 152 186 152 H140 Z"
           stroke="url(#strokeGrad)"
           strokeWidth="10"
@@ -206,10 +190,10 @@ function DOLLogo({ onPortal }) {
           filter="url(#glow)"
         />
 
-        {/* O */}
+        {/* O ring */}
         <path
           className={styles.strokeDraw}
-          d="M460 50 C540 50 600 90 600 120 C600 150 540 190 460 190 
+          d="M460 50 C540 50 600 90 600 120 C600 150 540 190 460 190
              C380 190 320 150 320 120 C320 90 380 50 460 50 Z"
           stroke="url(#strokeGrad)"
           strokeWidth="10"
@@ -217,13 +201,14 @@ function DOLLogo({ onPortal }) {
           filter="url(#glow)"
         />
 
-        {/* Inner O */}
+        {/* inner O */}
         <path
           className={styles.strokeDrawSoft}
-          d="M460 82 C505 82 540 103 540 120 C540 137 505 158 460 158 
+          d="M460 82 C505 82 540 103 540 120 C540 137 505 158 460 158
              C415 158 380 137 380 120 C380 103 415 82 460 82 Z"
           stroke="rgba(160,255,220,0.55)"
           strokeWidth="8"
+          strokeLinejoin="round"
           opacity="0.9"
         />
 
@@ -238,25 +223,13 @@ function DOLLogo({ onPortal }) {
           filter="url(#glow)"
         />
 
-        {/* Portal */}
-        <circle
-          className={styles.portalGlow}
-          cx="460"
-          cy="120"
-          r="56"
-          fill="url(#portalFill)"
-        />
+        {/* portal glow */}
+        <circle className={styles.portalGlow} cx="460" cy="120" r="56" fill="url(#portalFill)" />
         <circle className={styles.portalRing} cx="460" cy="120" r="66" />
       </svg>
 
-      <button
-        className={styles.portalBtn}
-        onClick={(e) => {
-          e.stopPropagation();
-          onPortal();
-        }}
-        aria-label="Enter portal"
-      >
+      {/* clickable portal target */}
+      <button className={styles.portalBtn} onClick={(e) => (e.stopPropagation(), onPortal())} aria-label="Enter portal">
         <span className={styles.portalCore} />
       </button>
     </div>
